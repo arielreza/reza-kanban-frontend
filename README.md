@@ -4,6 +4,35 @@ Aplikasi **Mini Kanban Board** ini dibuat untuk memenuhi Tes Teknis Seleksi Maga
 
 ---
 
+## 📸 Preview Aplikasi (Screenshots)
+
+**1. Halaman Login (Dark & Light Mode)**
+<div style="display: flex; gap: 10px;">
+  <img src="./public/home_dark.png" width="48%" alt="Login Dark Mode" />
+  <img src="./public/home_light.png" width="48%" alt="Login Light Mode" />
+</div>
+
+**2. Dashboard Utama (Kanban Board)**
+<div style="display: flex; gap: 10px;">
+  <img src="./public/dashboard_dark.png" width="48%" alt="Dashboard Dark Mode" />
+  <img src="./public/dashboard_light.png" width="48%" alt="Dashboard Light Mode" />
+</div>
+
+**3. Interaksi Modal (Tambah & Edit Tugas)**
+<div style="display: flex; gap: 10px;">
+  <img src="./public/tambah%20tugas_dark.png" width="48%" alt="Modal Tambah Tugas" />
+  <img src="./public/edit_tugas.png" width="48%" alt="Modal Edit Tugas" />
+</div>
+
+**4. Interaksi Tambahan (Notifikasi & Profil)**
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+  <img src="./public/Notification_1.png" width="31%" alt="Notifikasi 1" />
+  <img src="./public/Notification_2.png" width="31%" alt="Notifikasi 2" />
+  <img src="./public/profile.png" width="31%" alt="Halaman Profil" />
+</div>
+
+---
+
 ## 🧑‍💻 Detail Peserta
 * **Nama Peserta:** Ariel Reza
 * **Posisi:** Web Developer
@@ -46,12 +75,23 @@ Proyek ini terbagi menjadi dua bagian (Front-End dan Back-End). Anda harus menja
 Pastikan Anda memiliki **PHP 8.2+**, **Composer**, dan **MySQL** (misalnya melalui Laragon/XAMPP) yang sudah berjalan.
 1. Buka terminal dan masuk ke folder backend: `cd reza-kanban-backend`
 2. Jalankan `composer install` (jika baru pertama kali).
-3. Buat database bernama `reza_kanban_backend` di MySQL Anda.
-4. Jalankan migrasi dan seeder untuk membuat tabel dan mengisi dummy data:
+3. Salin file environment: `cp .env.example .env`
+4. Buka file `.env`, lalu pastikan pengaturan database mengarah ke MySQL Anda:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=reza_kanban_backend
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
+5. Generate application key: `php artisan key:generate`
+6. Buat database bernama `reza_kanban_backend` di MySQL Anda.
+7. Jalankan migrasi dan seeder untuk membuat tabel dan mengisi dummy data:
    ```bash
    php artisan migrate:fresh --seed
    ```
-5. Jalankan server lokal:
+8. Jalankan server lokal:
    ```bash
    php artisan serve
    ```
