@@ -3,14 +3,13 @@ import { initialTasks } from './utils/initialData';
 import Login from './components/Login';
 import TaskCard from './components/TaskCard';
 import TaskModal from './components/TaskModal';
-import UserProfile from './components/UserProfile'; // Import komponen baru
+import UserProfile from './components/UserProfile';
+import Toast from './components/Toast'; // Import Toast
 
 function App() {
   // State Autentikasi
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
-
-  // --- STATE BARU: Navigasi View ('board' atau 'profile') ---
   const [currentView, setCurrentView] = useState('board');
 
   // State Form Login
@@ -21,6 +20,14 @@ function App() {
   // STATE UTAMA: Menyimpan data kartu kanban
   const [tasks, setTasks] = useState(initialTasks);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // --- STATE BARU: Manajemen Toast Notification ---
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Helper pemicu toast
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+  };
 
   // State TAMBAH Card
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,26 +55,25 @@ function App() {
     if (!email || !password) { setError('Email dan password wajib diisi.'); return; }
     if ((email === 'admin@admin.com' && password === 'password123') || (email === 'user1@example.com' && password === 'password123')) {
       setIsLoggedIn(true);
-      setUser({
-        id: email === 'admin@admin.com' ? 'USR-ADMIN' : 'USR-TEST-01',
-        name: email === 'admin@admin.com' ? 'Admin User' : 'User Testing 1',
-        email: email
-      });
-      setCurrentView('board'); // Reset view ke board pas login
+      setUser({ id: email === 'admin@admin.com' ? 'USR-ADMIN' : 'USR-TEST-01', name: email === 'admin@admin.com' ? 'Admin User' : 'User Testing 1', email: email });
+      setCurrentView('board');
+      showToast('Selamat datang kembali!', 'success'); // Pemicu Toast
     } else { setError('Email atau password salah!'); }
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false); setUser(null); setEmail(''); setPassword(''); setSearchTerm('');
+    showToast('Berhasil keluar akun', 'info');
   };
 
-  // Fungsi CRUD
+  // Fungsi CRUD dengan Trigger Toast
   const handleAddTask = (e) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
     const newTask = { id: Date.now().toString(), title: newTitle, description: newDescription, priority: newPriority, deadline: newDeadline, status: newStatus };
     setTasks([...tasks, newTask]);
     setNewTitle(''); setNewDescription(''); setNewPriority('Medium'); setNewDeadline(''); setNewStatus('Backlog'); setIsModalOpen(false);
+    showToast('Tugas baru berhasil ditambahkan!'); // Pemicu Toast
   };
 
   const openEditModal = (task) => {
@@ -78,57 +84,49 @@ function App() {
     e.preventDefault();
     const updatedTasks = tasks.map((task) => task.id === editingTaskId ? { ...task, title: editTitle, description: editDescription, priority: editPriority, deadline: editDeadline, status: editStatus } : task);
     setTasks(updatedTasks); setIsEditModalOpen(false); setEditingTaskId(null);
+    showToast('Tugas berhasil diperbarui!'); // Pemicu Toast
   };
 
   const handleDeleteTask = (taskId) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus tugas ini?')) {
       setTasks(tasks.filter((task) => task.id !== taskId));
+      showToast('Tugas berhasil dihapus', 'info'); // Pemicu Toast
     }
   };
 
-  // Drag & Drop Handlers
+  // Drag & Drop Handlers dengan Toast info perpindahan
   const handleDragStart = (taskId) => setDraggedTaskId(taskId);
   const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (targetColumn) => {
     if (!draggedTaskId) return;
     setTasks(tasks.map((task) => task.id === draggedTaskId ? { ...task, status: targetColumn } : task));
     setDraggedTaskId(null);
+    showToast(`Kartu dipindahkan ke ${targetColumn}`); // Pemicu Toast
   };
 
   const columns = ['Backlog', 'To Do', 'In Progress', 'Done'];
   const filteredTasksBySearch = tasks.filter((task) => task.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-6 font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-6 font-sans select-none transition-colors duration-300">
       {!isLoggedIn ? (
         <Login email={email} setEmail={setEmail} password={password} setPassword={setPassword} error={error} onLogin={handleLogin} />
       ) : (
         <div className="w-full max-w-7xl">
 
-          {/* --- VIEW 1: KANBAN BOARD VIEW --- */}
           {currentView === 'board' && (
-            <>
+            <div className="animate-fade-in duration-300">
               {/* Header */}
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6 gap-4">
                 <div>
                   <h1 className="text-2xl font-black text-slate-800 tracking-tight">Workspace Kanban</h1>
-                  {/* Klik nama user untuk masuk ke profile */}
-                  <p className="text-sm text-slate-400">
-                    Selamat bekerja,{' '}
-                    <button
-                      onClick={() => setCurrentView('profile')}
-                      className="font-bold text-blue-600 hover:underline cursor-pointer"
-                      title="Lihat Profil Saya"
-                    >
-                      {user?.name} 👤
-                    </button>
-                  </p>
+                  <p className="text-sm text-slate-400">Selamat bekerja, <button onClick={() => setCurrentView('profile')} className="font-bold text-blue-600 hover:underline cursor-pointer">{user?.name} 👤</button></p>
                 </div>
                 <div className="w-full md:w-72 relative">
                   <input type="text" placeholder="🔍 Cari tugas berdasarkan judul..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 shadow-sm">+ Tambah Tugas</button>
+                  <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md hover:scale-[1.02] transition-all">+ Tambah Tugas</button>
                   <button onClick={handleLogout} className="bg-rose-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-600 shadow-sm">Logout</button>
                 </div>
               </div>
@@ -138,14 +136,16 @@ function App() {
                 {columns.map((col) => {
                   const filteredTasks = filteredTasksBySearch.filter((task) => task.status === col);
                   return (
-                    <div key={col} onDragOver={handleDragOver} onDrop={() => handleDrop(col)} className="bg-slate-100/80 rounded-2xl p-4 border border-slate-200/60 min-h-[500px] flex flex-col">
+                    <div key={col} onDragOver={handleDragOver} onDrop={() => handleDrop(col)} className="bg-slate-100/80 rounded-2xl p-4 border border-slate-200/60 min-h-[500px] flex flex-col hover:border-slate-300 transition-all duration-300">
                       <div className="flex justify-between items-center mb-4 px-1">
                         <h3 className="font-bold text-slate-700 text-md">{col}</h3>
                         <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full">{filteredTasks.length}</span>
                       </div>
                       <div className="space-y-3 flex-1 overflow-y-auto">
                         {filteredTasks.map((task) => (
-                          <TaskCard key={task.id} task={task} onEdit={openEditModal} onDelete={handleDeleteTask} onDragStart={handleDragStart} />
+                          <div key={task.id} className="hover:scale-[1.02] transition-transform duration-200">
+                            <TaskCard task={task} onEdit={openEditModal} onDelete={handleDeleteTask} onDragStart={handleDragStart} />
+                          </div>
                         ))}
                         {filteredTasks.length === 0 && <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl text-xs text-slate-400">{searchTerm ? 'Tidak ada hasil' : 'Belum ada tugas'}</div>}
                       </div>
@@ -153,20 +153,24 @@ function App() {
                   );
                 })}
               </div>
-            </>
+            </div>
           )}
 
-          {/* --- VIEW 2: PROFILE PAGE VIEW --- */}
           {currentView === 'profile' && (
-            <UserProfile user={user} onBack={() => setCurrentView('board')} />
+            <div className="animate-fade-in">
+              <UserProfile user={user} onBack={() => setCurrentView('board')} />
+            </div>
           )}
 
-          {/* Modal Tambah */}
+          {/* Modals */}
           <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleAddTask} title="Tambah Tugas Baru" submitLabel="Simpan Tugas" submitColor="bg-blue-600 hover:bg-blue-700" taskTitle={newTitle} setTaskTitle={setNewTitle} taskDesc={newDescription} setTaskDesc={setNewDescription} taskPriority={newPriority} setTaskPriority={setNewPriority} taskStatus={newStatus} setTaskStatus={setNewStatus} taskDeadline={newDeadline} setTaskDeadline={setNewDeadline} columns={columns} />
-
-          {/* Modal Edit */}
           <TaskModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingTaskId(null); }} onSubmit={handleUpdateTask} title="✏️ Edit Tugas" submitLabel="Simpan Perubahan" submitColor="bg-emerald-600 hover:bg-emerald-700" taskTitle={editTitle} setTaskTitle={setEditTitle} taskDesc={editDescription} setTaskDesc={setEditDescription} taskPriority={editPriority} setTaskPriority={setEditPriority} taskStatus={editStatus} setTaskStatus={setEditStatus} taskDeadline={editDeadline} setTaskDeadline={setEditDeadline} columns={columns} />
         </div>
+      )}
+
+      {/* RENDER TOAST COMPONENT */}
+      {toast.show && (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
       )}
     </div>
   );
