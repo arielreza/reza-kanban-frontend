@@ -38,6 +38,7 @@ function App() {
   // STATE UTAMA: Menyimpan data kartu kanban
   const [tasks, setTasks] = useState(initialTasks);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterPriority, setFilterPriority] = useState('All');
 
   // --- STATE: Manajemen Toast Notification ---
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -82,7 +83,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false); setUser(null); setEmail(''); setPassword(''); setSearchTerm('');
+    setIsLoggedIn(false); setUser(null); setEmail(''); setPassword(''); setSearchTerm(''); setFilterPriority('All');
     showToast('Berhasil keluar akun', 'info');
   };
 
@@ -132,7 +133,10 @@ function App() {
   };
 
   const columns = ['Backlog', 'To Do', 'In Progress', 'Done'];
-  const filteredTasksBySearch = tasks.filter((task) => task.title.toLowerCase().includes(searchTerm.toLowerCase()));
+  const priorities = ['All', 'High', 'Medium', 'Low'];
+  const filteredTasksBySearch = tasks
+    .filter((task) => task.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((task) => filterPriority === 'All' || task.priority === filterPriority);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-start p-6 font-sans select-none transition-colors duration-300">
@@ -173,6 +177,34 @@ function App() {
                   <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md hover:scale-[1.02] transition-all">+ Tambah Tugas</button>
                   <button onClick={handleLogout} className="bg-rose-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-600 shadow-sm transition-all">Logout</button>
                 </div>
+              </div>
+
+              {/* Filter Prioritas */}
+              <div className="flex items-center gap-2 mb-5 flex-wrap">
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mr-1">Filter:</span>
+                {priorities.map((p) => {
+                  const isActive = filterPriority === p;
+                  const colorMap = {
+                    All: isActive ? 'bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600',
+                    High: isActive ? 'bg-red-500 text-white' : 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50',
+                    Medium: isActive ? 'bg-amber-500 text-white' : 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50',
+                    Low: isActive ? 'bg-green-500 text-white' : 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50',
+                  };
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setFilterPriority(p)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${colorMap[p]} ${isActive ? 'shadow-sm scale-[1.04]' : ''}`}
+                    >
+                      {p === 'All' ? '🗂 Semua' : p === 'High' ? '🔴 High' : p === 'Medium' ? '🟡 Medium' : '🟢 Low'}
+                    </button>
+                  );
+                })}
+                {filterPriority !== 'All' && (
+                  <span className="text-xs text-slate-400 dark:text-slate-500 ml-1">
+                    — menampilkan prioritas <strong className="text-slate-600 dark:text-slate-300">{filterPriority}</strong>
+                  </span>
+                )}
               </div>
 
               {/* Board Grid */}
