@@ -14,13 +14,22 @@ function App() {
   // STATE UTAMA: Menyimpan data kartu kanban
   const [tasks, setTasks] = useState(initialTasks);
 
-  // --- STATE BARU: Untuk Mengontrol Modal & Form Tambah Card ---
+  // State Untuk Mengontrol Modal & Form TAMBAH Card
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [newPriority, setNewPriority] = useState('Medium'); // Default Medium
+  const [newPriority, setNewPriority] = useState('Medium');
   const [newDeadline, setNewDeadline] = useState('');
-  const [newStatus, setNewStatus] = useState('Backlog'); // Default Kolom Pertama
+  const [newStatus, setNewStatus] = useState('Backlog');
+
+  // --- STATE BARU: Untuk Mengontrol Modal & Form EDIT Card ---
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState('Medium');
+  const [editDeadline, setEditDeadline] = useState('');
+  const [editStatus, setEditStatus] = useState('Backlog');
 
   // Fungsi Login
   const handleLogin = (e) => {
@@ -53,19 +62,17 @@ function App() {
     setPassword('');
   };
 
-  // --- FUNGSI BARU: Untuk Menambahkan Card Ke State ---
+  // Fungsi Untuk Menambahkan Card Baru
   const handleAddTask = (e) => {
     e.preventDefault();
 
-    // Validasi field yang wajib diisi sesuai instruksi soal
     if (!newTitle.trim() || !newPriority || !newStatus) {
       alert('Judul, Prioritas, dan Kolom Tujuan wajib diisi!');
       return;
     }
 
-    // Membuat objek card baru
     const newTask = {
-      id: Date.now().toString(), // Bikin ID unik pakai timestamp
+      id: Date.now().toString(),
       title: newTitle,
       description: newDescription,
       priority: newPriority,
@@ -73,22 +80,70 @@ function App() {
       status: newStatus
     };
 
-    // Gabungkan card baru dengan list task yang sudah ada
     setTasks([...tasks, newTask]);
 
-    // Reset isi form input setelah sukses
+    // Reset Form
     setNewTitle('');
     setNewDescription('');
     setNewPriority('Medium');
     setNewDeadline('');
     setNewStatus('Backlog');
-    setIsModalOpen(false); // Tutup Modal
+    setIsModalOpen(false);
+  };
+
+  // --- FUNGSI BARU: Membuka Modal Edit & Set Isi Data Lama ---
+  const openEditModal = (task) => {
+    setEditingTaskId(task.id);
+    setEditTitle(task.title);
+    setEditDescription(task.description);
+    setEditPriority(task.priority);
+    setEditDeadline(task.deadline);
+    setEditStatus(task.status);
+    setIsEditModalOpen(true);
+  };
+
+  // --- FUNGSI BARU: Menyimpan Perubahan Data Card (Edit) ---
+  const handleUpdateTask = (e) => {
+    e.preventDefault();
+
+    if (!editTitle.trim() || !editPriority || !editStatus) {
+      alert('Judul, Prioritas, dan Status wajib diisi!');
+      return;
+    }
+
+    // Map data tasks, ganti data lama dengan data baru berdasarkan ID
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === editingTaskId) {
+        return {
+          ...task,
+          title: editTitle,
+          description: editDescription,
+          priority: editPriority,
+          deadline: editDeadline,
+          status: editStatus
+        };
+      }
+      return task;
+    });
+
+    setTasks(updatedTasks);
+    setIsEditModalOpen(false);
+    setEditingTaskId(null);
+  };
+
+  // --- FUNGSI BARU: Menghapus Card dengan Konfirmasi ---
+  const handleDeleteTask = (taskId) => {
+    const confirmDelete = window.confirm('Apakah Anda yakin ingin menghapus tugas ini?');
+    if (confirmDelete) {
+      const filteredTasks = tasks.filter((task) => task.id !== taskId);
+      setTasks(filteredTasks);
+    }
   };
 
   // Definisi 4 Kolom Utama Kanban
   const columns = ['Backlog', 'To Do', 'In Progress', 'Done'];
 
-  // Helper fungsi untuk mewarnai badge prioritas agar UI tambah rapi
+  // Helper fungsi untuk mewarnai badge prioritas
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'High': return 'bg-red-100 text-red-700 border-red-200';
@@ -153,7 +208,6 @@ function App() {
               <p className="text-sm text-slate-400">Selamat bekerja, <span className="font-semibold text-slate-600">{user?.name}</span> ({user?.email})</p>
             </div>
 
-            {/* Tombol Tambah Card Baru & Tombol Logout */}
             <div className="flex gap-3">
               <button
                 onClick={() => setIsModalOpen(true)}
@@ -189,12 +243,30 @@ function App() {
                     {filteredTasks.map((task) => (
                       <div
                         key={task.id}
-                        className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/40 hover:shadow-md transition group"
+                        className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/40 hover:shadow-md transition group relative"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md border ${getPriorityColor(task.priority)}`}>
                             {task.priority}
                           </span>
+
+                          {/* Tombol Aksi Edit & Hapus */}
+                          <div className="flex gap-1.5 opacity-60 group-hover:opacity-100 transition">
+                            <button
+                              onClick={() => openEditModal(task)}
+                              className="text-slate-400 hover:text-blue-600 text-xs font-semibold p-0.5"
+                              title="Edit Tugas"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="text-slate-400 hover:text-rose-600 text-xs font-semibold p-0.5"
+                              title="Hapus Tugas"
+                            >
+                              🗑️
+                            </button>
+                          </div>
                         </div>
 
                         <h4 className="font-bold text-slate-800 text-sm mb-1 leading-snug group-hover:text-blue-600 transition">
@@ -223,13 +295,13 @@ function App() {
             })}
           </div>
 
-          {/* --- MODAL DIALOG POP-UP UNTUK TAMBAH CARD --- */}
+          {/* --- MODAL UNTUK TAMBAH CARD --- */}
           {isModalOpen && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-fade-in">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
               <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100">
                 <h3 className="text-xl font-bold text-slate-800 mb-4">Tambah Tugas Baru</h3>
-
                 <form onSubmit={handleAddTask} className="space-y-4">
+                  {/* Field inputs tambah... (sama seperti sebelumnya) */}
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Judul Tugas *</label>
                     <input
@@ -241,7 +313,6 @@ function App() {
                       required
                     />
                   </div>
-
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Deskripsi</label>
                     <textarea
@@ -251,7 +322,6 @@ function App() {
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm h-20 resize-none"
                     />
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Prioritas *</label>
@@ -265,7 +335,6 @@ function App() {
                         <option value="High">High</option>
                       </select>
                     </div>
-
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kolom Tujuan *</label>
                       <select
@@ -279,7 +348,6 @@ function App() {
                       </select>
                     </div>
                   </div>
-
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Deadline</label>
                     <input
@@ -289,20 +357,93 @@ function App() {
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                   </div>
+                  <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
+                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-500 font-bold text-sm hover:bg-slate-50 rounded-xl">Batal</button>
+                    <button type="submit" className="px-5 py-2 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700">Simpan Tugas</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* --- MODAL POP-UP BARU UNTUK EDIT CARD --- */}
+          {isEditModalOpen && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100">
+                <h3 className="text-xl font-bold text-slate-800 mb-4">✏️ Edit Tugas</h3>
+
+                <form onSubmit={handleUpdateTask} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Judul Tugas *</label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Deskripsi</label>
+                    <textarea
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm h-20 resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Prioritas *</label>
+                      <select
+                        value={editPriority}
+                        onChange={(e) => setEditPriority(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Status/Kolom *</label>
+                      <select
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      >
+                        {columns.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Deadline</label>
+                    <input
+                      type="date"
+                      value={editDeadline}
+                      onChange={(e) => setEditDeadline(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
 
                   <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
                     <button
                       type="button"
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-4 py-2 text-slate-500 font-bold text-sm hover:bg-slate-50 rounded-xl transition"
+                      onClick={() => { setIsEditModalOpen(false); setEditingTaskId(null); }}
+                      className="px-4 py-2 text-slate-500 font-bold text-sm hover:bg-slate-50 rounded-xl"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition"
+                      className="px-5 py-2 bg-emerald-600 text-white font-bold text-sm rounded-xl hover:bg-emerald-700 transition"
                     >
-                      Simpan Tugas
+                      Simpan Perubahan
                     </button>
                   </div>
                 </form>
