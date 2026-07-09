@@ -14,7 +14,7 @@ function App() {
   // STATE UTAMA: Menyimpan data kartu kanban
   const [tasks, setTasks] = useState(initialTasks);
 
-  // --- STATE BARU: Untuk Pencarian Tugas ---
+  // State Untuk Pencarian Tugas
   const [searchTerm, setSearchTerm] = useState('');
 
   // State Untuk Mengontrol Modal & Form TAMBAH Card
@@ -33,6 +33,9 @@ function App() {
   const [editPriority, setEditPriority] = useState('Medium');
   const [editDeadline, setEditDeadline] = useState('');
   const [editStatus, setEditStatus] = useState('Backlog');
+
+  // --- STATE BARU: Menyimpan ID kartu yang sedang didrag ---
+  const [draggedTaskId, setDraggedTaskId] = useState(null);
 
   // Fungsi Login
   const handleLogin = (e) => {
@@ -63,7 +66,7 @@ function App() {
     setUser(null);
     setEmail('');
     setPassword('');
-    setSearchTerm(''); // Reset pencarian saat logout
+    setSearchTerm('');
   };
 
   // Fungsi Untuk Menambahkan Card Baru
@@ -143,6 +146,30 @@ function App() {
     }
   };
 
+  // --- FUNGSI BARU: DRAG & DROP HANDLERS ---
+  const handleDragStart = (taskId) => {
+    setDraggedTaskId(taskId);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault(); // Wajib diisi agar HTML mengizinkan drop data
+  };
+
+  const handleDrop = (targetColumn) => {
+    if (!draggedTaskId) return;
+
+    // Update status kolom kartu yang sedang didrag
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === draggedTaskId) {
+        return { ...task, status: targetColumn };
+      }
+      return task;
+    });
+
+    setTasks(updatedTasks);
+    setDraggedTaskId(null); // Reset state drag
+  };
+
   // Definisi 4 Kolom Utama Kanban
   const columns = ['Backlog', 'To Do', 'In Progress', 'Done'];
 
@@ -156,8 +183,7 @@ function App() {
     }
   };
 
-  // --- LOGIKA FILTER BARU ---
-  // Menyaring tugas berdasarkan judul yang diketik di kolom search
+  // Menyaring tugas berdasarkan pencarian
   const filteredTasksBySearch = tasks.filter((task) =>
     task.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -217,7 +243,7 @@ function App() {
               <p className="text-sm text-slate-400">Selamat bekerja, <span className="font-semibold text-slate-600">{user?.name}</span></p>
             </div>
 
-            {/* --- INPUT SEARCH BARU --- */}
+            {/* Input Search */}
             <div className="w-full md:w-72 relative">
               <input
                 type="text"
@@ -256,11 +282,16 @@ function App() {
           {/* Grid 4 Kolom Kanban */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {columns.map((col) => {
-              // Menggunakan filteredTasksBySearch dan bukan tasks langsung
               const filteredTasks = filteredTasksBySearch.filter((task) => task.status === col);
 
               return (
-                <div key={col} className="bg-slate-100/80 rounded-2xl p-4 border border-slate-200/60 min-h-[500px] flex flex-col">
+                // --- INTEGRASI DROP ZONE PADA KOLOM ---
+                <div
+                  key={col}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(col)}
+                  className="bg-slate-100/80 rounded-2xl p-4 border border-slate-200/60 min-h-[500px] flex flex-col transition duration-200 focus-within:bg-slate-200"
+                >
                   <div className="flex justify-between items-center mb-4 px-1">
                     <h3 className="font-bold text-slate-700 tracking-wide text-md">{col}</h3>
                     <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full">
@@ -271,9 +302,12 @@ function App() {
                   {/* Isi Kolom / List Cards */}
                   <div className="space-y-3 flex-1 overflow-y-auto">
                     {filteredTasks.map((task) => (
+                      // --- INTEGRASI DRAGGABLE PADA CARD KANBAN ---
                       <div
                         key={task.id}
-                        className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/40 hover:shadow-md transition group relative"
+                        draggable
+                        onDragStart={() => handleDragStart(task.id)}
+                        className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/40 hover:shadow-md transition group relative cursor-grab active:cursor-grabbing"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md border ${getPriorityColor(task.priority)}`}>
