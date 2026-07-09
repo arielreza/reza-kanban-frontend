@@ -1,13 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { initialTasks } from './utils/initialData';
 import Login from './components/Login';
 import TaskCard from './components/TaskCard';
 import TaskModal from './components/TaskModal';
 import UserProfile from './components/UserProfile';
-import Toast from './components/Toast'; // Import Toast
-import ConfirmModal from './components/ConfirmModal'; // Import ConfirmModal
+import Toast from './components/Toast';
+import ConfirmModal from './components/ConfirmModal';
 
 function App() {
+  // State Dark Mode — baca dari localStorage, default false
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('kanban-darkMode') === 'true';
+  });
+
+  // Sinkronkan class 'dark' ke <html> setiap kali isDarkMode berubah
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('kanban-darkMode', isDarkMode);
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => setIsDarkMode(prev => !prev);
+
   // State Autentikasi
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
@@ -22,10 +39,9 @@ function App() {
   const [tasks, setTasks] = useState(initialTasks);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // --- STATE BARU: Manajemen Toast Notification ---
+  // --- STATE: Manajemen Toast Notification ---
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  // Helper pemicu toast
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
   };
@@ -61,7 +77,7 @@ function App() {
       setIsLoggedIn(true);
       setUser({ id: email === 'admin@admin.com' ? 'USR-ADMIN' : 'USR-TEST-01', name: email === 'admin@admin.com' ? 'Admin User' : 'User Testing 1', email: email });
       setCurrentView('board');
-      showToast('Selamat datang kembali!', 'success'); // Pemicu Toast
+      showToast('Selamat datang kembali!', 'success');
     } else { setError('Email atau password salah!'); }
   };
 
@@ -77,7 +93,7 @@ function App() {
     const newTask = { id: Date.now().toString(), title: newTitle, description: newDescription, priority: newPriority, deadline: newDeadline, status: newStatus };
     setTasks([...tasks, newTask]);
     setNewTitle(''); setNewDescription(''); setNewPriority('Medium'); setNewDeadline(''); setNewStatus('Backlog'); setIsModalOpen(false);
-    showToast('Tugas baru berhasil ditambahkan!'); // Pemicu Toast
+    showToast('Tugas baru berhasil ditambahkan!');
   };
 
   const openEditModal = (task) => {
@@ -88,7 +104,7 @@ function App() {
     e.preventDefault();
     const updatedTasks = tasks.map((task) => task.id === editingTaskId ? { ...task, title: editTitle, description: editDescription, priority: editPriority, deadline: editDeadline, status: editStatus } : task);
     setTasks(updatedTasks); setIsEditModalOpen(false); setEditingTaskId(null);
-    showToast('Tugas berhasil diperbarui!'); // Pemicu Toast
+    showToast('Tugas berhasil diperbarui!');
   };
 
   const handleDeleteTask = (taskId) => {
@@ -105,40 +121,57 @@ function App() {
     setConfirmModal({ show: false, taskId: null });
   };
 
-  // Drag & Drop Handlers dengan Toast info perpindahan
+  // Drag & Drop Handlers
   const handleDragStart = (taskId) => setDraggedTaskId(taskId);
   const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (targetColumn) => {
     if (!draggedTaskId) return;
     setTasks(tasks.map((task) => task.id === draggedTaskId ? { ...task, status: targetColumn } : task));
     setDraggedTaskId(null);
-    showToast(`Kartu dipindahkan ke ${targetColumn}`); // Pemicu Toast
+    showToast(`Kartu dipindahkan ke ${targetColumn}`);
   };
 
   const columns = ['Backlog', 'To Do', 'In Progress', 'Done'];
   const filteredTasksBySearch = tasks.filter((task) => task.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-6 font-sans select-none transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-start p-6 font-sans select-none transition-colors duration-300">
       {!isLoggedIn ? (
-        <Login email={email} setEmail={setEmail} password={password} setPassword={setPassword} error={error} onLogin={handleLogin} />
+        <Login
+          email={email} setEmail={setEmail}
+          password={password} setPassword={setPassword}
+          error={error} onLogin={handleLogin}
+          isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode}
+        />
       ) : (
         <div className="w-full max-w-7xl">
 
           {currentView === 'board' && (
             <div className="animate-fade-in duration-300">
               {/* Header */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6 gap-4">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 mb-6 gap-4 transition-colors duration-300">
                 <div>
-                  <h1 className="text-2xl font-black text-slate-800 tracking-tight">Workspace Kanban</h1>
-                  <p className="text-sm text-slate-400">Selamat bekerja, <button onClick={() => setCurrentView('profile')} className="font-bold text-blue-600 hover:underline cursor-pointer">{user?.name} 👤</button></p>
+                  <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Workspace Kanban</h1>
+                  <p className="text-sm text-slate-400 dark:text-slate-500">Selamat bekerja, <button onClick={() => setCurrentView('profile')} className="font-bold text-blue-600 hover:underline cursor-pointer">{user?.name} 👤</button></p>
                 </div>
                 <div className="w-full md:w-72 relative">
-                  <input type="text" placeholder="🔍 Cari tugas berdasarkan judul..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input
+                    type="text" placeholder="🔍 Cari tugas berdasarkan judul..."
+                    value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 focus:bg-white dark:focus:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  />
                 </div>
                 <div className="flex gap-3">
+                  {/* Dark Mode Toggle */}
+                  <button
+                    onClick={toggleDarkMode}
+                    title={isDarkMode ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'}
+                    className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
+                  >
+                    {isDarkMode ? '☀️' : '🌙'}
+                  </button>
                   <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md hover:scale-[1.02] transition-all">+ Tambah Tugas</button>
-                  <button onClick={handleLogout} className="bg-rose-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-600 shadow-sm">Logout</button>
+                  <button onClick={handleLogout} className="bg-rose-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-600 shadow-sm transition-all">Logout</button>
                 </div>
               </div>
 
@@ -147,10 +180,15 @@ function App() {
                 {columns.map((col) => {
                   const filteredTasks = filteredTasksBySearch.filter((task) => task.status === col);
                   return (
-                    <div key={col} onDragOver={handleDragOver} onDrop={() => handleDrop(col)} className="bg-slate-100/80 rounded-2xl p-4 border border-slate-200/60 min-h-[500px] flex flex-col hover:border-slate-300 transition-all duration-300">
+                    <div
+                      key={col}
+                      onDragOver={handleDragOver}
+                      onDrop={() => handleDrop(col)}
+                      className="bg-slate-100/80 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700 min-h-[500px] flex flex-col hover:border-slate-300 dark:hover:border-slate-500 transition-all duration-300"
+                    >
                       <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 className="font-bold text-slate-700 text-md">{col}</h3>
-                        <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full">{filteredTasks.length}</span>
+                        <h3 className="font-bold text-slate-700 dark:text-slate-200 text-md">{col}</h3>
+                        <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold px-2.5 py-0.5 rounded-full">{filteredTasks.length}</span>
                       </div>
                       <div className="space-y-3 flex-1 overflow-y-auto">
                         {filteredTasks.map((task) => (
@@ -158,7 +196,11 @@ function App() {
                             <TaskCard task={task} onEdit={openEditModal} onDelete={handleDeleteTask} onDragStart={handleDragStart} />
                           </div>
                         ))}
-                        {filteredTasks.length === 0 && <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl text-xs text-slate-400">{searchTerm ? 'Tidak ada hasil' : 'Belum ada tugas'}</div>}
+                        {filteredTasks.length === 0 && (
+                          <div className="text-center py-8 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-400 dark:text-slate-600">
+                            {searchTerm ? 'Tidak ada hasil' : 'Belum ada tugas'}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
