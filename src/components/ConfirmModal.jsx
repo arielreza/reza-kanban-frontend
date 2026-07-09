@@ -4,7 +4,7 @@ export default function ConfirmModal({ isOpen, message, onConfirm, onCancel }) {
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 dark:border-slate-700 animate-fade-in transition-colors duration-300">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 dark:border-slate-700 animate-scale-in transition-colors duration-300">
 
                 {/* Icon */}
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/40 mx-auto mb-4">

@@ -9,7 +9,7 @@ export default function TaskModal({
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100 dark:border-slate-700 transition-colors duration-300">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100 dark:border-slate-700 animate-scale-in transition-colors duration-300">
                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">{title}</h3>
                 <form onSubmit={onSubmit} className="space-y-4">
                     <div>

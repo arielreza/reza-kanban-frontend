@@ -7,13 +7,20 @@ import UserProfile from './components/UserProfile';
 import Toast from './components/Toast';
 import ConfirmModal from './components/ConfirmModal';
 
+// Konfigurasi warna per kolom
+const colConfig = {
+  'Backlog':     { topBorder: 'border-t-4 border-t-slate-300 dark:border-t-slate-500',    badge: 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300',            dot: 'bg-slate-400' },
+  'To Do':       { topBorder: 'border-t-4 border-t-blue-400 dark:border-t-blue-500',      badge: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300',             dot: 'bg-blue-400' },
+  'In Progress': { topBorder: 'border-t-4 border-t-amber-400 dark:border-t-amber-500',    badge: 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300',         dot: 'bg-amber-400' },
+  'Done':        { topBorder: 'border-t-4 border-t-emerald-400 dark:border-t-emerald-500', badge: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-400' },
+};
+
 function App() {
-  // State Dark Mode — baca dari localStorage, default false
+  // State Dark Mode
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('kanban-darkMode') === 'true';
   });
 
-  // Sinkronkan class 'dark' ke <html> setiap kali isDarkMode berubah
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -40,7 +47,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState('All');
 
-  // --- STATE: Manajemen Toast Notification ---
+  // STATE: Manajemen Toast Notification
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const showToast = (message, type = 'success') => {
@@ -87,7 +94,7 @@ function App() {
     showToast('Berhasil keluar akun', 'info');
   };
 
-  // Fungsi CRUD dengan Trigger Toast
+  // Fungsi CRUD
   const handleAddTask = (e) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
@@ -122,7 +129,7 @@ function App() {
     setConfirmModal({ show: false, taskId: null });
   };
 
-  // Drag & Drop Handlers
+  // Drag & Drop
   const handleDragStart = (taskId) => setDraggedTaskId(taskId);
   const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (targetColumn) => {
@@ -139,7 +146,13 @@ function App() {
     .filter((task) => filterPriority === 'All' || task.priority === filterPriority);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-start p-6 font-sans select-none transition-colors duration-300">
+    <div className={`min-h-screen font-sans select-none transition-all duration-500 flex flex-col
+      ${!isLoggedIn
+        ? 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100/50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-950 items-center justify-center p-6'
+        : 'bg-gradient-to-br from-blue-200 via-slate-200 to-indigo-200/70 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 items-center justify-start p-6'
+      }`
+    }>
+
       {!isLoggedIn ? (
         <Login
           email={email} setEmail={setEmail}
@@ -151,86 +164,134 @@ function App() {
         <div className="w-full max-w-7xl">
 
           {currentView === 'board' && (
-            <div className="animate-fade-in duration-300">
-              {/* Header */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 mb-6 gap-4 transition-colors duration-300">
-                <div>
-                  <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Workspace Kanban</h1>
-                  <p className="text-sm text-slate-400 dark:text-slate-500">Selamat bekerja, <button onClick={() => setCurrentView('profile')} className="font-bold text-blue-600 hover:underline cursor-pointer">{user?.name} 👤</button></p>
+            <div className="animate-fade-in">
+
+              {/* ========== HEADER ========== */}
+              <div className="grid grid-cols-1 md:grid-cols-3 items-center bg-white dark:bg-slate-800/80 backdrop-blur-md px-5 py-4 rounded-2xl shadow-md shadow-slate-300/50 dark:shadow-none border border-slate-200/80 dark:border-slate-700/60 mb-5 gap-4 transition-colors duration-300">
+
+                {/* Kolom 1: Brand (kiri) */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 dark:shadow-blue-900/40 flex-shrink-0">
+                    <span className="text-white text-sm font-black">K</span>
+                  </div>
+                  <div>
+                    <h1 className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none">Workspace Kanban</h1>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                      Selamat bekerja,{' '}
+                      <button onClick={() => setCurrentView('profile')} className="font-bold text-blue-600 dark:text-blue-400 hover:underline">
+                        {user?.name} 👤
+                      </button>
+                    </p>
+                  </div>
                 </div>
-                <div className="w-full md:w-72 relative">
+
+                {/* Kolom 2: Search (tengah — benar-benar center) */}
+                <div className="flex justify-center">
                   <input
-                    type="text" placeholder="🔍 Cari tugas berdasarkan judul..."
-                    value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 focus:bg-white dark:focus:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    type="text"
+                    placeholder="🔍 Cari tugas..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full max-w-xs px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 focus:bg-white dark:focus:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   />
                 </div>
-                <div className="flex gap-3">
-                  {/* Dark Mode Toggle */}
+
+                {/* Kolom 3: Actions (kanan) */}
+                <div className="flex gap-2 justify-end">
                   <button
                     onClick={toggleDarkMode}
-                    title={isDarkMode ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'}
-                    className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
+                    title={isDarkMode ? 'Mode Terang' : 'Mode Gelap'}
+                    className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2.5 rounded-xl text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
                   >
                     {isDarkMode ? '☀️' : '🌙'}
                   </button>
-                  <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md hover:scale-[1.02] transition-all">+ Tambah Tugas</button>
-                  <button onClick={handleLogout} className="bg-rose-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-600 shadow-sm transition-all">Logout</button>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 hover:scale-[1.02] transition-all"
+                  >
+                    + Tambah
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-500 hover:text-white dark:hover:bg-rose-500 dark:hover:text-white transition-all"
+                  >
+                    Logout
+                  </button>
                 </div>
               </div>
 
-              {/* Filter Prioritas */}
-              <div className="flex items-center gap-2 mb-5 flex-wrap">
-                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mr-1">Filter:</span>
+              {/* ========== FILTER PRIORITAS ========== */}
+              <div className="flex items-center gap-2 mb-5 flex-wrap bg-white dark:bg-slate-800/60 backdrop-blur-sm px-4 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm shadow-slate-200/50 dark:shadow-none">
+                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mr-1">Prioritas:</span>
                 {priorities.map((p) => {
                   const isActive = filterPriority === p;
                   const colorMap = {
-                    All: isActive ? 'bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600',
-                    High: isActive ? 'bg-red-500 text-white' : 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50',
-                    Medium: isActive ? 'bg-amber-500 text-white' : 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50',
-                    Low: isActive ? 'bg-green-500 text-white' : 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50',
+                    All:    isActive ? 'bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-800 shadow-sm' : 'bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700',
+                    High:   isActive ? 'bg-rose-500 text-white shadow-sm shadow-rose-200 dark:shadow-rose-900/30' : 'bg-transparent text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20',
+                    Medium: isActive ? 'bg-amber-400 text-white shadow-sm shadow-amber-200 dark:shadow-amber-900/30' : 'bg-transparent text-amber-500 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20',
+                    Low:    isActive ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200 dark:shadow-emerald-900/30' : 'bg-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20',
                   };
                   return (
                     <button
                       key={p}
                       onClick={() => setFilterPriority(p)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${colorMap[p]} ${isActive ? 'shadow-sm scale-[1.04]' : ''}`}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${colorMap[p]} ${isActive ? 'scale-[1.04]' : ''}`}
                     >
-                      {p === 'All' ? '🗂 Semua' : p === 'High' ? '🔴 High' : p === 'Medium' ? '🟡 Medium' : '🟢 Low'}
+                      {p === 'All' ? 'Semua' : p === 'High' ? '🔴 High' : p === 'Medium' ? '🟡 Medium' : '🟢 Low'}
                     </button>
                   );
                 })}
                 {filterPriority !== 'All' && (
-                  <span className="text-xs text-slate-400 dark:text-slate-500 ml-1">
-                    — menampilkan prioritas <strong className="text-slate-600 dark:text-slate-300">{filterPriority}</strong>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 ml-1">
+                    — hanya menampilkan <strong className="text-slate-600 dark:text-slate-300">{filterPriority}</strong>
                   </span>
                 )}
               </div>
 
-              {/* Board Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* ========== BOARD GRID ========== */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {columns.map((col) => {
+                  const cfg = colConfig[col];
                   const filteredTasks = filteredTasksBySearch.filter((task) => task.status === col);
                   return (
                     <div
                       key={col}
                       onDragOver={handleDragOver}
                       onDrop={() => handleDrop(col)}
-                      className="bg-slate-100/80 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700 min-h-[500px] flex flex-col hover:border-slate-300 dark:hover:border-slate-500 transition-all duration-300"
+                      className={`bg-white dark:bg-slate-800/70 rounded-2xl border border-slate-200 dark:border-slate-700/60 min-h-[520px] flex flex-col overflow-hidden shadow-md shadow-slate-300/40 dark:shadow-none hover:shadow-lg dark:hover:shadow-none transition-all duration-300 ${cfg.topBorder}`}
                     >
-                      <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 className="font-bold text-slate-700 dark:text-slate-200 text-md">{col}</h3>
-                        <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold px-2.5 py-0.5 rounded-full">{filteredTasks.length}</span>
+                      {/* Column Header */}
+                      <div className="flex justify-between items-center px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+                          <h3 className="font-bold text-slate-700 dark:text-slate-200 text-sm">{col}</h3>
+                        </div>
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${cfg.badge}`}>
+                          {filteredTasks.length}
+                        </span>
                       </div>
-                      <div className="space-y-3 flex-1 overflow-y-auto">
+
+                      {/* Divider */}
+                      <div className="mx-4 border-t border-slate-100 dark:border-slate-700/60 mb-3" />
+
+                      {/* Cards */}
+                      <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2.5">
                         {filteredTasks.map((task) => (
-                          <div key={task.id} className="hover:scale-[1.02] transition-transform duration-200">
-                            <TaskCard task={task} onEdit={openEditModal} onDelete={handleDeleteTask} onDragStart={handleDragStart} />
-                          </div>
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            onEdit={openEditModal}
+                            onDelete={handleDeleteTask}
+                            onDragStart={handleDragStart}
+                          />
                         ))}
+
                         {filteredTasks.length === 0 && (
-                          <div className="text-center py-8 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-400 dark:text-slate-600">
-                            {searchTerm ? 'Tidak ada hasil' : 'Belum ada tugas'}
+                          <div className="flex flex-col items-center justify-center py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-slate-400 dark:text-slate-600 mt-2">
+                            <span className="text-3xl mb-2 opacity-50">📭</span>
+                            <p className="text-xs font-medium text-center">
+                              {searchTerm || filterPriority !== 'All' ? 'Tidak ada hasil' : 'Belum ada tugas'}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -242,18 +303,16 @@ function App() {
           )}
 
           {currentView === 'profile' && (
-            <div className="animate-fade-in">
-              <UserProfile user={user} onBack={() => setCurrentView('board')} onLogout={handleLogout} />
-            </div>
+            <UserProfile user={user} onBack={() => setCurrentView('board')} onLogout={handleLogout} />
           )}
 
           {/* Modals */}
-          <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleAddTask} title="Tambah Tugas Baru" submitLabel="Simpan Tugas" submitColor="bg-blue-600 hover:bg-blue-700" taskTitle={newTitle} setTaskTitle={setNewTitle} taskDesc={newDescription} setTaskDesc={setNewDescription} taskPriority={newPriority} setTaskPriority={setNewPriority} taskStatus={newStatus} setTaskStatus={setNewStatus} taskDeadline={newDeadline} setTaskDeadline={setNewDeadline} columns={columns} />
-          <TaskModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingTaskId(null); }} onSubmit={handleUpdateTask} title="✏️ Edit Tugas" submitLabel="Simpan Perubahan" submitColor="bg-emerald-600 hover:bg-emerald-700" taskTitle={editTitle} setTaskTitle={setEditTitle} taskDesc={editDescription} setTaskDesc={setEditDescription} taskPriority={editPriority} setTaskPriority={setEditPriority} taskStatus={editStatus} setTaskStatus={setEditStatus} taskDeadline={editDeadline} setTaskDeadline={setEditDeadline} columns={columns} />
+          <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleAddTask} title="✨ Tambah Tugas Baru" submitLabel="Simpan Tugas" submitColor="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" taskTitle={newTitle} setTaskTitle={setNewTitle} taskDesc={newDescription} setTaskDesc={setNewDescription} taskPriority={newPriority} setTaskPriority={setNewPriority} taskStatus={newStatus} setTaskStatus={setNewStatus} taskDeadline={newDeadline} setTaskDeadline={setNewDeadline} columns={columns} />
+          <TaskModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingTaskId(null); }} onSubmit={handleUpdateTask} title="✏️ Edit Tugas" submitLabel="Simpan Perubahan" submitColor="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700" taskTitle={editTitle} setTaskTitle={setEditTitle} taskDesc={editDescription} setTaskDesc={setEditDescription} taskPriority={editPriority} setTaskPriority={setEditPriority} taskStatus={editStatus} setTaskStatus={setEditStatus} taskDeadline={editDeadline} setTaskDeadline={setEditDeadline} columns={columns} />
         </div>
       )}
 
-      {/* RENDER TOAST COMPONENT */}
+      {/* RENDER TOAST */}
       {toast.show && (
         <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
       )}
