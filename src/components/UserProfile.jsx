@@ -1,14 +1,22 @@
 /* eslint-disable react/prop-types */
-export default function UserProfile({ user, onBack }) {
+export default function UserProfile({ user, onBack, onLogout }) {
     return (
         <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-slate-100 p-8 mx-auto mt-10">
             {/* Tombol Kembali */}
-            <button
-                onClick={onBack}
-                className="text-sm font-bold text-blue-600 hover:text-blue-800 transition mb-6 flex items-center gap-1"
-            >
-                ⬅️ Kembali ke Kanban Board
-            </button>
+            <div className="flex justify-between items-center mb-6">
+                <button
+                    onClick={onBack}
+                    className="text-sm font-bold text-blue-600 hover:text-blue-800 transition flex items-center gap-1"
+                >
+                    ⬅️ Kembali ke Kanban Board
+                </button>
+                <button
+                    onClick={onLogout}
+                    className="bg-rose-500 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-rose-600 shadow-sm transition-all hover:scale-[1.02]"
+                >
+                    🚪 Logout
+                </button>
+            </div>
 
             <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6 border-b border-slate-100 pb-6">
                 {/* Avatar Bulat Besar */}

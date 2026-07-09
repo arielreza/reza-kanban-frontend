@@ -5,6 +5,7 @@ import TaskCard from './components/TaskCard';
 import TaskModal from './components/TaskModal';
 import UserProfile from './components/UserProfile';
 import Toast from './components/Toast'; // Import Toast
+import ConfirmModal from './components/ConfirmModal'; // Import ConfirmModal
 
 function App() {
   // State Autentikasi
@@ -49,6 +50,9 @@ function App() {
   // State Drag and Drop
   const [draggedTaskId, setDraggedTaskId] = useState(null);
 
+  // State Konfirmasi Hapus
+  const [confirmModal, setConfirmModal] = useState({ show: false, taskId: null });
+
   // Fungsi Login & Logout
   const handleLogin = (e) => {
     e.preventDefault(); setError('');
@@ -88,10 +92,17 @@ function App() {
   };
 
   const handleDeleteTask = (taskId) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus tugas ini?')) {
-      setTasks(tasks.filter((task) => task.id !== taskId));
-      showToast('Tugas berhasil dihapus', 'info'); // Pemicu Toast
-    }
+    setConfirmModal({ show: true, taskId });
+  };
+
+  const handleConfirmDelete = () => {
+    setTasks(tasks.filter((task) => task.id !== confirmModal.taskId));
+    setConfirmModal({ show: false, taskId: null });
+    showToast('Tugas berhasil dihapus', 'info');
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmModal({ show: false, taskId: null });
   };
 
   // Drag & Drop Handlers dengan Toast info perpindahan
@@ -158,7 +169,7 @@ function App() {
 
           {currentView === 'profile' && (
             <div className="animate-fade-in">
-              <UserProfile user={user} onBack={() => setCurrentView('board')} />
+              <UserProfile user={user} onBack={() => setCurrentView('board')} onLogout={handleLogout} />
             </div>
           )}
 
@@ -172,6 +183,14 @@ function App() {
       {toast.show && (
         <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
       )}
+
+      {/* RENDER CONFIRM MODAL */}
+      <ConfirmModal
+        isOpen={confirmModal.show}
+        message="Apakah Anda yakin ingin menghapus tugas ini? Tindakan ini tidak dapat dibatalkan."
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </div>
   );
 }
