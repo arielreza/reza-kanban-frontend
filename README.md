@@ -4,6 +4,12 @@ Aplikasi **Mini Kanban Board** ini dibuat untuk memenuhi Tes Teknis Seleksi Maga
 
 ---
 
+## 🔗 Repository Terkait
+Proyek ini memisahkan arsitektur *Front-End* dan *Back-End* (Decoupled). Ini adalah repositori untuk sisi **Front-End (UI & Client-side logic)**.
+* ⚙️ **Back-End Repository:** [github.com/arielreza/reza-kanban-backend](https://github.com/arielreza/reza-kanban-backend)
+
+---
+
 ## 📸 Preview Aplikasi (Screenshots)
 
 **1. Halaman Login (Dark & Light Mode)**
