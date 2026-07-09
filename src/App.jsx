@@ -14,6 +14,9 @@ function App() {
   // STATE UTAMA: Menyimpan data kartu kanban
   const [tasks, setTasks] = useState(initialTasks);
 
+  // --- STATE BARU: Untuk Pencarian Tugas ---
+  const [searchTerm, setSearchTerm] = useState('');
+
   // State Untuk Mengontrol Modal & Form TAMBAH Card
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -22,7 +25,7 @@ function App() {
   const [newDeadline, setNewDeadline] = useState('');
   const [newStatus, setNewStatus] = useState('Backlog');
 
-  // --- STATE BARU: Untuk Mengontrol Modal & Form EDIT Card ---
+  // State Untuk Mengontrol Modal & Form EDIT Card
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
@@ -60,6 +63,7 @@ function App() {
     setUser(null);
     setEmail('');
     setPassword('');
+    setSearchTerm(''); // Reset pencarian saat logout
   };
 
   // Fungsi Untuk Menambahkan Card Baru
@@ -91,7 +95,7 @@ function App() {
     setIsModalOpen(false);
   };
 
-  // --- FUNGSI BARU: Membuka Modal Edit & Set Isi Data Lama ---
+  // Fungsi Membuka Modal Edit & Set Isi Data Lama
   const openEditModal = (task) => {
     setEditingTaskId(task.id);
     setEditTitle(task.title);
@@ -102,7 +106,7 @@ function App() {
     setIsEditModalOpen(true);
   };
 
-  // --- FUNGSI BARU: Menyimpan Perubahan Data Card (Edit) ---
+  // Fungsi Menyimpan Perubahan Data Card (Edit)
   const handleUpdateTask = (e) => {
     e.preventDefault();
 
@@ -111,7 +115,6 @@ function App() {
       return;
     }
 
-    // Map data tasks, ganti data lama dengan data baru berdasarkan ID
     const updatedTasks = tasks.map((task) => {
       if (task.id === editingTaskId) {
         return {
@@ -131,7 +134,7 @@ function App() {
     setEditingTaskId(null);
   };
 
-  // --- FUNGSI BARU: Menghapus Card dengan Konfirmasi ---
+  // Fungsi Menghapus Card dengan Konfirmasi
   const handleDeleteTask = (taskId) => {
     const confirmDelete = window.confirm('Apakah Anda yakin ingin menghapus tugas ini?');
     if (confirmDelete) {
@@ -152,6 +155,12 @@ function App() {
       default: return 'bg-slate-100 text-slate-700';
     }
   };
+
+  // --- LOGIKA FILTER BARU ---
+  // Menyaring tugas berdasarkan judul yang diketik di kolom search
+  const filteredTasksBySearch = tasks.filter((task) =>
+    task.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-6 font-sans">
@@ -202,22 +211,42 @@ function App() {
         // --- HALAMAN UTAMA KANBAN BOARD ---
         <div className="w-full max-w-7xl">
           {/* Header Workspace */}
-          <div className="flex justify-between items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6 gap-4">
             <div>
               <h1 className="text-2xl font-black text-slate-800 tracking-tight">Workspace Kanban</h1>
-              <p className="text-sm text-slate-400">Selamat bekerja, <span className="font-semibold text-slate-600">{user?.name}</span> ({user?.email})</p>
+              <p className="text-sm text-slate-400">Selamat bekerja, <span className="font-semibold text-slate-600">{user?.name}</span></p>
             </div>
 
-            <div className="flex gap-3">
+            {/* --- INPUT SEARCH BARU --- */}
+            <div className="w-full md:w-72 relative">
+              <input
+                type="text"
+                placeholder="🔍 Cari tugas berdasarkan judul..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-slate-50 focus:bg-white transition"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-2.5 text-xs font-bold text-slate-400 hover:text-slate-600"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Tombol Akses */}
+            <div className="flex gap-3 w-full md:w-auto justify-end">
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition shadow-sm shadow-blue-100"
+                className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition shadow-sm text-sm"
               >
                 + Tambah Tugas
               </button>
               <button
                 onClick={handleLogout}
-                className="bg-rose-500 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-rose-600 transition shadow-sm shadow-rose-100"
+                className="bg-rose-500 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-rose-600 transition shadow-sm text-sm"
               >
                 Logout
               </button>
@@ -227,7 +256,8 @@ function App() {
           {/* Grid 4 Kolom Kanban */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {columns.map((col) => {
-              const filteredTasks = tasks.filter((task) => task.status === col);
+              // Menggunakan filteredTasksBySearch dan bukan tasks langsung
+              const filteredTasks = filteredTasksBySearch.filter((task) => task.status === col);
 
               return (
                 <div key={col} className="bg-slate-100/80 rounded-2xl p-4 border border-slate-200/60 min-h-[500px] flex flex-col">
@@ -250,19 +280,16 @@ function App() {
                             {task.priority}
                           </span>
 
-                          {/* Tombol Aksi Edit & Hapus */}
                           <div className="flex gap-1.5 opacity-60 group-hover:opacity-100 transition">
                             <button
                               onClick={() => openEditModal(task)}
                               className="text-slate-400 hover:text-blue-600 text-xs font-semibold p-0.5"
-                              title="Edit Tugas"
                             >
                               ✏️
                             </button>
                             <button
                               onClick={() => handleDeleteTask(task.id)}
                               className="text-slate-400 hover:text-rose-600 text-xs font-semibold p-0.5"
-                              title="Hapus Tugas"
                             >
                               🗑️
                             </button>
@@ -286,7 +313,7 @@ function App() {
 
                     {filteredTasks.length === 0 && (
                       <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl text-xs text-slate-400 font-medium">
-                        Belum ada tugas
+                        {searchTerm ? 'Tidak ada hasil cocok' : 'Belum ada tugas'}
                       </div>
                     )}
                   </div>
@@ -301,7 +328,6 @@ function App() {
               <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100">
                 <h3 className="text-xl font-bold text-slate-800 mb-4">Tambah Tugas Baru</h3>
                 <form onSubmit={handleAddTask} className="space-y-4">
-                  {/* Field inputs tambah... (sama seperti sebelumnya) */}
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Judul Tugas *</label>
                     <input
@@ -366,12 +392,11 @@ function App() {
             </div>
           )}
 
-          {/* --- MODAL POP-UP BARU UNTUK EDIT CARD --- */}
+          {/* --- MODAL UNTUK EDIT CARD --- */}
           {isEditModalOpen && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
               <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100">
                 <h3 className="text-xl font-bold text-slate-800 mb-4">✏️ Edit Tugas</h3>
-
                 <form onSubmit={handleUpdateTask} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Judul Tugas *</label>
@@ -383,7 +408,6 @@ function App() {
                       required
                     />
                   </div>
-
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Deskripsi</label>
                     <textarea
@@ -392,7 +416,6 @@ function App() {
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm h-20 resize-none"
                     />
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Prioritas *</label>
@@ -406,7 +429,6 @@ function App() {
                         <option value="High">High</option>
                       </select>
                     </div>
-
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Status/Kolom *</label>
                       <select
@@ -420,7 +442,6 @@ function App() {
                       </select>
                     </div>
                   </div>
-
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Deadline</label>
                     <input
@@ -430,21 +451,9 @@ function App() {
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                   </div>
-
                   <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
-                    <button
-                      type="button"
-                      onClick={() => { setIsEditModalOpen(false); setEditingTaskId(null); }}
-                      className="px-4 py-2 text-slate-500 font-bold text-sm hover:bg-slate-50 rounded-xl"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2 bg-emerald-600 text-white font-bold text-sm rounded-xl hover:bg-emerald-700 transition"
-                    >
-                      Simpan Perubahan
-                    </button>
+                    <button type="button" onClick={() => { setIsEditModalOpen(false); setEditingTaskId(null); }} className="px-4 py-2 text-slate-500 font-bold text-sm hover:bg-slate-50 rounded-xl">Batal</button>
+                    <button type="submit" className="px-5 py-2 bg-emerald-600 text-white font-bold text-sm rounded-xl hover:bg-emerald-700 transition">Simpan Perubahan</button>
                   </div>
                 </form>
               </div>
