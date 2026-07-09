@@ -14,6 +14,14 @@ function App() {
   // STATE UTAMA: Menyimpan data kartu kanban
   const [tasks, setTasks] = useState(initialTasks);
 
+  // --- STATE BARU: Untuk Mengontrol Modal & Form Tambah Card ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newPriority, setNewPriority] = useState('Medium'); // Default Medium
+  const [newDeadline, setNewDeadline] = useState('');
+  const [newStatus, setNewStatus] = useState('Backlog'); // Default Kolom Pertama
+
   // Fungsi Login
   const handleLogin = (e) => {
     e.preventDefault();
@@ -43,6 +51,38 @@ function App() {
     setUser(null);
     setEmail('');
     setPassword('');
+  };
+
+  // --- FUNGSI BARU: Untuk Menambahkan Card Ke State ---
+  const handleAddTask = (e) => {
+    e.preventDefault();
+
+    // Validasi field yang wajib diisi sesuai instruksi soal
+    if (!newTitle.trim() || !newPriority || !newStatus) {
+      alert('Judul, Prioritas, dan Kolom Tujuan wajib diisi!');
+      return;
+    }
+
+    // Membuat objek card baru
+    const newTask = {
+      id: Date.now().toString(), // Bikin ID unik pakai timestamp
+      title: newTitle,
+      description: newDescription,
+      priority: newPriority,
+      deadline: newDeadline,
+      status: newStatus
+    };
+
+    // Gabungkan card baru dengan list task yang sudah ada
+    setTasks([...tasks, newTask]);
+
+    // Reset isi form input setelah sukses
+    setNewTitle('');
+    setNewDescription('');
+    setNewPriority('Medium');
+    setNewDeadline('');
+    setNewStatus('Backlog');
+    setIsModalOpen(false); // Tutup Modal
   };
 
   // Definisi 4 Kolom Utama Kanban
@@ -112,23 +152,31 @@ function App() {
               <h1 className="text-2xl font-black text-slate-800 tracking-tight">Workspace Kanban</h1>
               <p className="text-sm text-slate-400">Selamat bekerja, <span className="font-semibold text-slate-600">{user?.name}</span> ({user?.email})</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="bg-rose-500 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-rose-600 transition shadow-sm shadow-rose-100"
-            >
-              Logout
-            </button>
+
+            {/* Tombol Tambah Card Baru & Tombol Logout */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition shadow-sm shadow-blue-100"
+              >
+                + Tambah Tugas
+              </button>
+              <button
+                onClick={handleLogout}
+                className="bg-rose-500 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-rose-600 transition shadow-sm shadow-rose-100"
+              >
+                Logout
+              </button>
+            </div>
           </div>
 
           {/* Grid 4 Kolom Kanban */}
-          <div className="grid grid-cols-1 md-grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {columns.map((col) => {
-              // Filter data kartu sesuai status kolom saat ini
               const filteredTasks = tasks.filter((task) => task.status === col);
 
               return (
                 <div key={col} className="bg-slate-100/80 rounded-2xl p-4 border border-slate-200/60 min-h-[500px] flex flex-col">
-                  {/* Judul Kolom & Badge Jumlah Item */}
                   <div className="flex justify-between items-center mb-4 px-1">
                     <h3 className="font-bold text-slate-700 tracking-wide text-md">{col}</h3>
                     <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full">
@@ -143,14 +191,12 @@ function App() {
                         key={task.id}
                         className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/40 hover:shadow-md transition group"
                       >
-                        {/* Tag Prioritas */}
                         <div className="flex justify-between items-start mb-2">
                           <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md border ${getPriorityColor(task.priority)}`}>
                             {task.priority}
                           </span>
                         </div>
 
-                        {/* Judul & Deskripsi Tugas */}
                         <h4 className="font-bold text-slate-800 text-sm mb-1 leading-snug group-hover:text-blue-600 transition">
                           {task.title}
                         </h4>
@@ -158,16 +204,14 @@ function App() {
                           {task.description || 'Tidak ada deskripsi.'}
                         </p>
 
-                        {/* Deadline */}
                         {task.deadline && (
                           <div className="flex items-center text-[11px] text-slate-400 border-t border-slate-100 pt-2 mt-2">
-                            <span className="font-medium">📅 Deadline: {task.deadline}</span>
+                            <span>📅 Deadline: {task.deadline}</span>
                           </div>
                         )}
                       </div>
                     ))}
 
-                    {/* State Kosong Jika Kolom Gak Ada Isinya */}
                     {filteredTasks.length === 0 && (
                       <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl text-xs text-slate-400 font-medium">
                         Belum ada tugas
@@ -178,6 +222,93 @@ function App() {
               );
             })}
           </div>
+
+          {/* --- MODAL DIALOG POP-UP UNTUK TAMBAH CARD --- */}
+          {isModalOpen && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-fade-in">
+              <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100">
+                <h3 className="text-xl font-bold text-slate-800 mb-4">Tambah Tugas Baru</h3>
+
+                <form onSubmit={handleAddTask} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Judul Tugas *</label>
+                    <input
+                      type="text"
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      placeholder="Masukkan judul tugas..."
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Deskripsi</label>
+                    <textarea
+                      value={newDescription}
+                      onChange={(e) => setNewDescription(e.target.value)}
+                      placeholder="Masukkan detail penjelasan deskripsi..."
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm h-20 resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Prioritas *</label>
+                      <select
+                        value={newPriority}
+                        onChange={(e) => setNewPriority(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kolom Tujuan *</label>
+                      <select
+                        value={newStatus}
+                        onChange={(e) => setNewStatus(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      >
+                        {columns.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Deadline</label>
+                    <input
+                      type="date"
+                      value={newDeadline}
+                      onChange={(e) => setNewDeadline(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(false)}
+                      className="px-4 py-2 text-slate-500 font-bold text-sm hover:bg-slate-50 rounded-xl transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition"
+                    >
+                      Simpan Tugas
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
